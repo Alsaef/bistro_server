@@ -8,7 +8,6 @@ app.use(cors())
 app.use(express.json())
 const stripe = require("stripe")(`${process.env.PAYMENT_KEY}`);
 const verify=(req,res,next)=>{
-  console.log('hitting server')
     //  console.log(req.headers.authorize)
       const authorize=req.headers.authorize;
       if (!authorize) {
@@ -188,11 +187,19 @@ async function run() {
          const payment=req.body;
 
          const query={_id:{$in: payment.itemsId.map(id => new ObjectId(id))}}
-        const deletresult =  await cartCallection.deleteMany(query)
+         const deletresult =  await cartCallection.deleteMany(query)
          const result= await paymentCallections.insertOne(payment)
          res.send({result,deletresult})
     })
-
+    app.get('/payment',verify,async(req,res)=>{
+      const result = await paymentCallections.find().sort({date:-1}).toArray()
+      res.send(result) 
+     })
+    app.get('/payment/:id',async(req,res)=>{
+      const id=req.params.id
+      const result = await paymentCallections.findOne({_id: new ObjectId(id)})
+      res.send(result) 
+     })
      app.get('/admin-status',verify,verifyAdmin,async(req,res)=>{
       const users= await usersCallections.estimatedDocumentCount()
       const menuItem= await menuCallaction.estimatedDocumentCount()
@@ -209,6 +216,11 @@ async function run() {
 
      app.get('/manage-booking',async(req,res)=>{
       const result = await cartCallection.find().toArray()
+      res.send(result) 
+     })
+     app.delete('/manage-booking/:id',verify,async(req,res)=>{
+      const id=req.params.id
+      const result = await cartCallection.deleteOne({_id: new ObjectId(id)})
       res.send(result) 
      })
     
